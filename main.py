@@ -12,9 +12,9 @@ def browse_path():
     if path:
         output_label.config(text=f"Selected path: {path}")
 
-def generate_excel_data():
-    urls = urls_text.get("1.0", "end-1c").split('\n')
-    code = code_entry.get()
+def runner():
+    urls = urls_text.get("1.0", "end-1c").split('\n')[:-1]
+    code = int(code_entry.get())
     path = output_label.cget("text").replace("Selected path: ", "")  # Get the selected path
     print(urls)
     # print(code)
@@ -22,7 +22,9 @@ def generate_excel_data():
     # output_label.config(text="Processing... URLs: {}, Code: {}, Path: {}".format(", ".join(urls), code, path))
     storescrapeddatatoexcel(urls,path)
     file_path = path + '/scraped_data.xlsx'
-    # downloadimages(file_path)
+    print(file_path)
+    print("lllllllllllllllllllllllllllllllllllllllllllllllllll")
+    downloadimages(file_path,code)
 
 root = tk.Tk()
 root.title("Scraper")  # Title for the window
@@ -70,7 +72,7 @@ code_entry = ttk.Entry(main_frame, width=40)
 code_entry.grid(row=1, column=1, padx=5, pady=5)
 
 # Button to start the process
-start_button = ttk.Button(main_frame, text="Start", command=generate_excel_data)
+start_button = ttk.Button(main_frame, text="Start", command=runner)
 start_button.grid(row=2, column=1, pady=10)
 
 # Label for displaying the output

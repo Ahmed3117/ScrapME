@@ -2,11 +2,10 @@ import openpyxl
 import requests
 import os
 # file_path = 'scraped_data.xlsx'
-def downloadimages(file_path):
+def downloadimages(file_path,start_code):
     workbook = openpyxl.load_workbook(file_path)
     worksheet = workbook.active  # or specify a sheet by name: workbook['SheetName']
     column_to_extract = 'D'
-    start_code = 10
     column_data = []
 
     for row in worksheet.iter_rows(values_only=True):
@@ -25,7 +24,7 @@ def downloadimages(file_path):
     for link_group in corrected_links_list[1:] :
 
         # download_folder = 'downloaded_images/' + str(corrected_links_list.index(link_group)+1)
-        download_folder = 'downloaded_images/' + str(start_code)
+        download_folder = os.path.dirname(file_path) +'/downloaded_images/' + str(start_code)
         
         os.makedirs(download_folder, exist_ok=True)
         for link in link_group:
@@ -47,3 +46,4 @@ def downloadimages(file_path):
 
 
 
+# downloadimages(file_path)
