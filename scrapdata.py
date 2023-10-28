@@ -18,17 +18,17 @@ def scrapurl(url,code):
     product_rate_number = None
     product_images = []
     product_images_urls = []
-    if url == '':
-        return (code,url,'None' ,'None', 'None', None, None, 'None', 'None')
-    else:
+    main_product_cat = ''
+
+    if url != '':
         response = requests.get(url, headers={'User-Agent': '', 'Accept-Language': 'en-US, en;q=0.5'})
         soup = BeautifulSoup(response.text, 'html.parser')
         try:
             
             main_product_cat = soup.select('#wayfinding-breadcrumbs_feature_div ul li span a')[0].get_text().strip()
-            product_cat = soup.select('#wayfinding-breadcrumbs_feature_div ul li span a')
-            for category in product_cat:
-                product_category = product_category + category.get_text().strip()+ ","
+            # product_cat = soup.select('#wayfinding-breadcrumbs_feature_div ul li span a')
+            # for category in product_cat:
+            #     product_category = product_category + category.get_text().strip()+ ","
         except:
             pass
         try:

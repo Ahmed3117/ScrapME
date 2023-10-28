@@ -17,12 +17,15 @@ def browse_path():
         output_label.config(text=f"Selected path: {path}")
 
 
-
+def clean_urls(urls):
+    cleaned_urls = [url for url in urls if url and url.startswith("https://")]
+    return cleaned_urls
 
 def runner():
-    urls = urls_text.get("1.0", "end-1c").split('\n')[:-1]
+    urls = urls_text.get("1.0", "end-1c").split('\n')
     code = int(code_entry.get())
     path = output_label.cget("text").replace("Selected path: ", "")
+    urls = clean_urls(urls)
     print(urls)
 
     try:

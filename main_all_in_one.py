@@ -8,117 +8,85 @@ import webbrowser
 # from downloadimagesfromexcel import downloadimages
 import openpyxl
 import requests
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 import math
 from bs4 import BeautifulSoup
 import re
 
 
-def scrapurl(url,code):
+
+def clean_urls(urls):
+    cleaned_urls = [url for url in urls if url and url.startswith("https://")]
+    return cleaned_urls
+
+
+
+def scrapurl(url, code):
+    product_cat = ''
+    main_product_cat = ''
     product_category = ''
     product_name = ''
     product_description = ''
     product_price = None
     product_rate = None
     product_rate_number = None
+    whole_price = ''
+    fraction_price = ''
     product_images = []
     product_images_urls = []
-    if url == '':
-        return (code,url,'None' ,'None', 'None', None, None, 'None', 'None')
-    else:
-        response = requests.get(url, headers={'User-Agent': '', 'Accept-Language': 'en-US, en;q=0.5'})
-        soup = BeautifulSoup(response.text, 'html.parser')
-        try:
-            
-            main_product_cat = soup.select('#wayfinding-breadcrumbs_feature_div ul li span a')[0].get_text().strip()
-            product_cat = soup.select('#wayfinding-breadcrumbs_feature_div ul li span a')
-            for category in product_cat:
-                product_category = product_category + category.get_text().strip()+ ","
-        except:
-            pass
-        try:
-            product_name = soup.select('#productTitle')[0].get_text().strip()
-        except:
-            pass
-        try:
-            product_rate = soup.select('#acrPopover span a span')[0].get_text().strip()
-        except:
-            pass
-        try:
-            product_rate_number = soup.select('#acrCustomerReviewText')[0].get_text().strip()
-        except:
-            pass
-        try:
-            whole_price = soup.select('.a-price-whole')[0].get_text().strip()[:-1]
-            fraction_price = soup.select('.a-price-fraction')[0].get_text().strip()
-            product_price = whole_price + "." + fraction_price  # Combine whole and fraction parts
-            product_price = product_price.replace(',', '')  # Remove commas
-            product_price = float(product_price)  # Convert to float
-            product_price = math.ceil(product_price)  # Convert to float
-            # product_price = int(product_price)  # Convert to int
-        except:
-            pass
-        try:
-            product_description = ''
-            product_desc = soup.select('#feature-bullets ul li span')[:-1]
-            for desc in product_desc:
-                product_description = product_description + desc.get_text() + ','
-        except:
-            pass
-        try:
-            # Find the script containing the JSON data
-            # script = soup.find('script', string=lambda text: text and 'jQuery.parseJSON' in text)
-            # data = script.text
-            # data = data.strip()
-            # pattern = re.compile(r"hiRes.*?jpg")
-            # matches = pattern.findall(data)
-            
-            # for match in matches[:5]:
-            #     link = match[8:]
-            #     product_images_urls.append(link)
-            
-            image_urls = soup.select('#altImages ul li span span span span img')
-            for image in image_urls[:6] :
-                image_url = image['src']
-                if image_url.endswith(".jpg"):
-                    image_url = re.sub(r'\._(.*?)_\.', r'._AC_SL1500_.', image_url)
-                    product_images_urls.append(image_url)
+    response = requests.get(url, headers={'User-Agent': '', 'Accept-Language': 'en-US, en;q=0.5'})
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-            product_images_urls = set(product_images_urls)
-            product_images_urls = list(product_images_urls)
+    try:
+        main_product_cat = soup.select('#wayfinding-breadcrumbs_feature_div ul li span a')[0].get_text().strip()
+    except:
+        main_product_cat = ''
+    try:
+        product_name = soup.select('#productTitle')[0].get_text().strip()
+    except:
+        pass
+    try:
+        product_rate = soup.select('#acrPopover span a span')[0].get_text().strip()
+    except:
+        pass
+    try:
+        product_rate_number = soup.select('#acrCustomerReviewText')[0].get_text().strip()
+    except:
+        pass
+    try:
+        whole_price = soup.select('.a-price-whole')[0].get_text().strip()[:-1]
+        fraction_price = soup.select('.a-price-fraction')[0].get_text().strip()
+        product_price = whole_price + "." + fraction_price  # Combine whole and fraction parts
+        product_price = product_price.replace(',', '')  # Remove commas
+        product_price = float(product_price)  # Convert to float
+        product_price = math.ceil(product_price)  # Convert to float
+    except:
+        pass
+    try:
+        product_description = ''
+        product_desc = soup.select('#feature-bullets ul li span')[:-1]
+        for desc in product_desc:
+            product_description = product_description + desc.get_text() + ','
+    except:
+        pass
+    try:
+        image_urls = soup.select('#altImages ul li span span span span img')
+        for image in image_urls[:6]:
+            image_url = image['src']
+            if image_url.endswith(".jpg"):
+                image_url = re.sub(r'\._(.*?)_\.', r'._AC_SL1500_.', image_url)
+                product_images_urls.append(image_url)
 
+        product_images_urls = set(product_images_urls)
+        product_images_urls = list(product_images_urls)
+    except:
+        pass
 
-        except:
-            pass
+    return code, url, main_product_cat, product_name, product_price, product_rate, product_rate_number, product_description[:-1], str(product_images_urls)
 
-        # old images way :
-
-        # try:
-        #     # product_images = soup.select('.imgTagWrapper img')
-        #     # product_images_urls = [image['src'] for image in product_images]
-        #     image_urls = soup.find_all('img')
-        #     image_resolutions = [(img.get('src'), extract_resolution(img.get('src'))) for img in image_urls if img.get('src') and img.get('src').endswith(".jpg") and "_AC_" in img.get('src') and "https://m.media-amazon.com/images/I/" in img.get('src')]
-
-        #     sorted_images = sorted(image_resolutions, key=lambda x: x[1], reverse=True)
-
-        #     top_8_images = sorted_images[:8]
-
-        #     selected_urls = [url for url, _ in top_8_images]
-        #     for link in selected_urls:
-        #         link = re.sub(r'L\..*?\.', 'L.', link)
-        #         print(link)
-        #         product_images_urls.append(link)
-
-        # except:
-        #     pass
-        
-
-        return code,url,main_product_cat, product_name, product_price, product_rate, product_rate_number, product_description[:-1],str(product_images_urls)
-
-def storescrapeddatatoexcel(urls,download_path,code):
+def storescrapeddatatoexcel(urls, download_path, code):
     workbook = Workbook()
     sheet = workbook.active
-# url, product_name, product_price, product_rate, product_rate_number, str(product_images_urls), product_description[:-1]
     sheet['A1'] = 'LOT Num'
     sheet['B1'] = 'urls'
     sheet['C1'] = 'category'
@@ -130,24 +98,22 @@ def storescrapeddatatoexcel(urls,download_path,code):
     sheet['I1'] = 'images'
     code = code
     for row, url in enumerate(urls, start=2):
-        
-        data = scrapurl(url,code)
-        if url != '' :
-            sheet.cell(row=row, column=1).value = data[0]
-            sheet.cell(row=row, column=2).value = data[1]
-            sheet.cell(row=row, column=3).value = data[2]
-            sheet.cell(row=row, column=4).value = data[3]
-            sheet.cell(row=row, column=5).value = data[4]
-            sheet.cell(row=row, column=6).value = data[5]
-            sheet.cell(row=row, column=7).value = data[6]
-            sheet.cell(row=row, column=8).value = data[7]
-            sheet.cell(row=row, column=9).value = data[8]
-            code+=1
+        data = scrapurl(url, code)
+        sheet.cell(row=row, column=1).value = data[0]
+        sheet.cell(row=row, column=2).value = data[1]
+        sheet.cell(row=row, column=3).value = data[2]
+        sheet.cell(row=row, column=4).value = data[3]
+        sheet.cell(row=row, column=5).value = data[4]
+        sheet.cell(row=row, column=6).value = data[5]
+        sheet.cell(row=row, column=7).value = data[6]
+        sheet.cell(row=row, column=8).value = data[7]
+        sheet.cell(row=row, column=9).value = data[8]
+        code += 1
     workbook.save(download_path + '/scraped_data.xlsx')
 
-def downloadimages(file_path,start_code):
-    workbook = openpyxl.load_workbook(file_path)
-    worksheet = workbook.active  # or specify a sheet by name: workbook['SheetName']
+def downloadimages(file_path, start_code):
+    workbook = load_workbook(file_path)
+    worksheet = workbook.active
     column_to_extract = 'I'
     column_data = []
 
@@ -158,60 +124,30 @@ def downloadimages(file_path,start_code):
         column_data.append(links_list)
 
     corrected_links_list = []
-    for links_list in column_data:
+    for links_list in column_data[1:]:
         for link in links_list:
-            # print(link)
             corrected_links = link.replace("[", "").replace("]", "").replace("'", "").split(',')
             corrected_links_list.append(corrected_links)
-    # print(corrected_links_list)
-    for link_group in corrected_links_list[1:] :
+
+    for link_group in corrected_links_list:
         counter = 0
-        # download_folder = 'downloaded_images/' + str(corrected_links_list.index(link_group)+1)
-        download_folder = os.path.dirname(file_path) +'/downloaded_images/' + str(start_code)
-        
+        download_folder = os.path.dirname(file_path) + '/downloaded_images/' + str(start_code)
         os.makedirs(download_folder, exist_ok=True)
         for link in link_group:
-            # sub_folder = download_folder + '/' + download_folder +  f"({link_group.index(link) +1 })"
-            # os.makedirs(sub_folder, exist_ok=True)
-            print(link)
             try:
                 response = requests.get(link)
-                
-                filename = os.path.join(download_folder, str(start_code) + " " + '(' + str(counter +1) + ')' + ".jpg")
-                # Save the image to the specified folder
+                filename = os.path.join(download_folder, str(start_code) + " " + '(' + str(counter + 1) + ')' + ".jpg")
                 with open(filename, 'wb') as file:
                     file.write(response.content)
                 print(f"Image downloaded and saved as {filename}")
-                counter+=1
+                counter += 1
             except:
                 print("not valid" + link)
-
         start_code += 1
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 def browse_path():
     default_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-    path = filedialog.askdirectory()  # Open a directory selection dialog
+    path = filedialog.askdirectory()
     if path:
         output_label.config(text=f"Selected path: {path}")
     else:
@@ -219,25 +155,20 @@ def browse_path():
         output_label.config(text=f"Selected path: {path}")
 
 def runner():
-    urls = urls_text.get("1.0", "end-1c").split('\n')[:-1]
+    urls = urls_text.get("1.0", "end-1c").split('\n')
     code = int(code_entry.get())
     path = output_label.cget("text").replace("Selected path: ", "")
-
+    urls = clean_urls(urls)
+    print(urls)
     try:
-        storescrapeddatatoexcel(urls, path,code)
+        storescrapeddatatoexcel(urls, path, code)
         file_path = path + '/scraped_data.xlsx'
         downloadimages(file_path, code)
-
-        # Create a custom message box with a clickable link
         message = "Task completed successfully."
         link_message = "Click OK to open the result location: {}".format(os.path.dirname(file_path))
         result = messagebox.showinfo("Success", message, detail=link_message)
-
-        # If the result is "ok" and the link was clicked, open the file path
         if result == "ok":
             webbrowser.open(os.path.dirname(file_path))
-        # Display a message when the task ends correctly
-        # messagebox.showinfo("Task Completed", "Done correctly. Click the link below to access the file:\n" + os.path.dirname(file_path))
     except Exception as e:
         messagebox.showerror("Task Error", f"An error occurred: {str(e)}")
 
