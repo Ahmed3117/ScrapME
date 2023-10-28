@@ -26,7 +26,7 @@ def runner():
     print(urls)
 
     try:
-        storescrapeddatatoexcel(urls, path)
+        storescrapeddatatoexcel(urls, path,code)
         file_path = path + '/scraped_data.xlsx'
         print(file_path)
         print("lllllllllllllllllllllllllllllllllllllllllllllllllll")

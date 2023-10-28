@@ -47,9 +47,9 @@ image_resolutions = [(img.get('src'), extract_resolution(img.get('src'))) for im
 
 sorted_images = sorted(image_resolutions, key=lambda x: x[1], reverse=True)
 
-top_5_images = sorted_images[:8]
+top_8_images = sorted_images[:8]
 
-selected_urls = [url for url, _ in top_5_images]
+selected_urls = [url for url, _ in top_8_images]
 for url in selected_urls:
     url = re.sub(r'L\..*?\.', 'L.', url)
     print(url)

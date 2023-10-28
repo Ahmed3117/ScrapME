@@ -5,7 +5,7 @@ import os
 def downloadimages(file_path,start_code):
     workbook = openpyxl.load_workbook(file_path)
     worksheet = workbook.active  # or specify a sheet by name: workbook['SheetName']
-    column_to_extract = 'D'
+    column_to_extract = 'I'
     column_data = []
 
     for row in worksheet.iter_rows(values_only=True):
