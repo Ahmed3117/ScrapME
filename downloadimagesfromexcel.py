@@ -22,7 +22,7 @@ def downloadimages(file_path,start_code):
             corrected_links_list.append(corrected_links)
     # print(corrected_links_list)
     for link_group in corrected_links_list[1:] :
-
+        counter = 0
         # download_folder = 'downloaded_images/' + str(corrected_links_list.index(link_group)+1)
         download_folder = os.path.dirname(file_path) +'/downloaded_images/' + str(start_code)
         
@@ -34,11 +34,12 @@ def downloadimages(file_path,start_code):
             try:
                 response = requests.get(link)
                 
-                filename = os.path.join(download_folder, str(start_code) + " " + '(' + str(link_group.index(link) +1) + ')' + ".jpg")
+                filename = os.path.join(download_folder, str(start_code) + " " + '(' + str(counter +1) + ')' + ".jpg")
                 # Save the image to the specified folder
                 with open(filename, 'wb') as file:
                     file.write(response.content)
                 print(f"Image downloaded and saved as {filename}")
+                counter+=1
             except:
                 print("not valid" + link)
 

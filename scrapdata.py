@@ -61,22 +61,51 @@ def scrapurl(url,code):
         except:
             pass
         try:
-            # product_images = soup.select('.imgTagWrapper img')
-            # product_images_urls = [image['src'] for image in product_images]
-            image_urls = soup.find_all('img')
-            image_resolutions = [(img.get('src'), extract_resolution(img.get('src'))) for img in image_urls if img.get('src') and img.get('src').endswith(".jpg") and "_AC_" in img.get('src') and "https://m.media-amazon.com/images/I/" in img.get('src')]
+            # Find the script containing the JSON data
+            # script = soup.find('script', string=lambda text: text and 'jQuery.parseJSON' in text)
+            # data = script.text
+            # data = data.strip()
+            # pattern = re.compile(r"hiRes.*?jpg")
+            # matches = pattern.findall(data)
+            
+            # for match in matches[:5]:
+            #     link = match[8:]
+            #     product_images_urls.append(link)
+            
+            image_urls = soup.select('#altImages ul li span span span span img')
+            for image in image_urls[:6] :
+                image_url = image['src']
+                if image_url.endswith(".jpg"):
+                    image_url = image_url.replace("_AC_US40_", "_AC_SL1500_")
+                    product_images_urls.append(image_url)
 
-            sorted_images = sorted(image_resolutions, key=lambda x: x[1], reverse=True)
+            product_images_urls = set(product_images_urls)
+            product_images_urls = list(product_images_urls)
 
-            top_8_images = sorted_images[1:7]
-
-            selected_urls = [url for url, _ in top_8_images]
-            for link in selected_urls:
-                link = re.sub(r'L\..*?\.', 'L.', link)
-                print(link)
-                product_images_urls.append(link)
 
         except:
             pass
+
+        # old images way :
+
+        # try:
+        #     # product_images = soup.select('.imgTagWrapper img')
+        #     # product_images_urls = [image['src'] for image in product_images]
+        #     image_urls = soup.find_all('img')
+        #     image_resolutions = [(img.get('src'), extract_resolution(img.get('src'))) for img in image_urls if img.get('src') and img.get('src').endswith(".jpg") and "_AC_" in img.get('src') and "https://m.media-amazon.com/images/I/" in img.get('src')]
+
+        #     sorted_images = sorted(image_resolutions, key=lambda x: x[1], reverse=True)
+
+        #     top_8_images = sorted_images[:8]
+
+        #     selected_urls = [url for url, _ in top_8_images]
+        #     for link in selected_urls:
+        #         link = re.sub(r'L\..*?\.', 'L.', link)
+        #         print(link)
+        #         product_images_urls.append(link)
+
+        # except:
+        #     pass
+        
 
         return code,url,main_product_cat, product_name, product_price, product_rate, product_rate_number, product_description[:-1],str(product_images_urls)
