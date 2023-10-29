@@ -15,10 +15,27 @@ import re
 
 
 
-def clean_urls(urls):
-    cleaned_urls = [url for url in urls if url and url.startswith("https://")]
-    return cleaned_urls
+# def clean_urls(urls):
+#     cleaned_urls = [url for url in urls if url and url.startswith("https://")]
+#     return cleaned_urls
 
+def clean_urls(urls):
+    cleaned_urls = []
+    for url in urls:
+        if "http" in url:
+            index = url.index("http")
+            space_index = url[index:].find(" ")
+            newline_index = url[index:].find("\n")
+            if space_index == -1 and newline_index == -1:
+                cleaned_urls.append(url[index:])
+            elif space_index != -1 and newline_index != -1:
+                end_index = min(space_index, newline_index) + index
+                cleaned_urls.append(url[index:end_index])
+            elif space_index != -1:
+                cleaned_urls.append(url[index:index + space_index])
+            else:
+                cleaned_urls.append(url[index:index + newline_index])
+    return cleaned_urls
 
 
 def scrapurl(url, code):
@@ -107,8 +124,10 @@ def storescrapeddatatoexcel(urls, download_path, code):
     sheet['H1'] = 'Description'
     sheet['I1'] = 'images'
     code = code
+    sheet_name = '/scraped_data' + str(code) + '.xlsx'
     for row, url in enumerate(urls, start=2):
         data = scrapurl(url, code)
+        print(url)
         sheet.cell(row=row, column=1).value = data[0]
         sheet.cell(row=row, column=2).value = data[1]
         sheet.cell(row=row, column=3).value = data[2]
@@ -119,7 +138,8 @@ def storescrapeddatatoexcel(urls, download_path, code):
         sheet.cell(row=row, column=8).value = data[7]
         sheet.cell(row=row, column=9).value = data[8]
         code += 1
-    workbook.save(download_path + '/scraped_data.xlsx')
+     
+    workbook.save(download_path + sheet_name)
 
 def downloadimages(file_path, start_code):
     workbook = load_workbook(file_path)
@@ -142,7 +162,7 @@ def downloadimages(file_path, start_code):
     for link_group in corrected_links_list:
         counter = 0
         # download_folder = os.path.dirname(file_path) + '/downloaded_images/' + str(start_code)
-        download_folder = os.path.dirname(file_path) + '/downloaded_images/' + str(start_code)
+        download_folder = os.path.dirname(file_path) + '/downloaded_images/' 
         os.makedirs(download_folder, exist_ok=True)
         for link in link_group:
             try:
@@ -168,12 +188,16 @@ def browse_path():
 def runner():
     urls = urls_text.get("1.0", "end-1c").split('\n')
     code = int(code_entry.get())
+    
     path = output_label.cget("text").replace("Selected path: ", "")
+    if path == '':
+        path = os.path.join(os.path.expanduser('~'), 'Downloads')
     urls = clean_urls(urls)
+    print(path)
     print(urls)
     try:
         storescrapeddatatoexcel(urls, path, code)
-        file_path = path + '/scraped_data.xlsx'
+        file_path = path + '/scraped_data' + str(code) + '.xlsx'
         downloadimages(file_path, code)
         message = "Task completed successfully."
         link_message = "Click OK to open the result location: {}".format(os.path.dirname(file_path))
