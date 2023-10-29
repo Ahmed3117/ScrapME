@@ -37,10 +37,10 @@ def clean_urls(urls):
                 cleaned_urls.append(url[index:index + newline_index])
     return cleaned_urls
 
-
 def scrapurl(url, code):
     bad_urls =[]
     main_product_cat = ''
+    main_product_alternative_cat = ''
     product_name = ''
     product_description = ''
     product_price = None
@@ -54,6 +54,9 @@ def scrapurl(url, code):
     try:    
         try:
             main_product_cat = soup.select('#wayfinding-breadcrumbs_feature_div ul li span a')[0].get_text().strip()
+            if main_product_cat == '':
+                main_product_alternative_cat = soup.select('#nav-subnav a span')[0].get_text().strip()
+                main_product_cat = main_product_alternative_cat
         except:
             pass
         try:
