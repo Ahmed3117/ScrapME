@@ -54,11 +54,11 @@ def scrapurl(url, code):
     try:    
         try:
             main_product_cat = soup.select('#wayfinding-breadcrumbs_feature_div ul li span a')[0].get_text().strip()
-            if main_product_cat == '':
-                main_product_alternative_cat = soup.select('#nav-subnav a span')[0].get_text().strip()
-                main_product_cat = main_product_alternative_cat
         except:
-            pass
+            try:
+                main_product_cat = soup.select('#nav-subnav a span')[0].get_text().strip()
+            except:
+                main_product_cat = ''
         try:
             product_name = soup.select('#productTitle')[0].get_text().strip()
         except:
@@ -269,6 +269,8 @@ browse_button.grid(row=2, column=0, pady=10)
 
 
 root.mainloop()
+
+
 
 
 
