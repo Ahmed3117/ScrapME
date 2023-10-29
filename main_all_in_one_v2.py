@@ -39,9 +39,10 @@ def clean_urls(urls):
 
 def scrapurl(url, code):
     bad_urls =[]
-    main_product_cat = ''
-    main_product_alternative_cat = ''
+    # main_product_cat = ''
+    category_name = ''
     product_name = ''
+    product_cats=[]
     product_description = ''
     product_price = None
     product_rate = None
@@ -53,12 +54,26 @@ def scrapurl(url, code):
     soup = BeautifulSoup(response.text, 'html.parser')
     try:    
         try:
-            main_product_cat = soup.select('#wayfinding-breadcrumbs_feature_div ul li span a')[0].get_text().strip()
+
+            # main_product_cat = soup.select('#wayfinding-breadcrumbs_feature_div ul li span a')[0].get_text().strip()
+            product_cats = soup.select('#wayfinding-breadcrumbs_feature_div ul li span a')
+            print(product_cats)
+            if product_cats != []:
+                for category in product_cats:
+                    category_name = category_name + ',' + category.get_text().strip()
+            else:
+                product_cats = soup.select('#nav-subnav a span')
+                for category in product_cats:
+                    category_name = category_name + ',' + category.get_text().strip()
         except:
-            try:
-                main_product_cat = soup.select('#nav-subnav a span')[0].get_text().strip()
-            except:
-                main_product_cat = ''
+            pass
+            # try:
+            #     # main_product_cat = soup.select('#nav-subnav a span')[0].get_text().strip()
+            #     product_cats = soup.select('#nav-subnav a span')
+            #     for category in product_cats:
+            #         category_name = category_name + ',' + category.get_text().strip()
+            # except:
+            #     category_name = ''
         try:
             product_name = soup.select('#productTitle')[0].get_text().strip()
         except:
@@ -112,7 +127,7 @@ def scrapurl(url, code):
             pass
     except:
         bad_urls.append(url)
-    return code, url, main_product_cat, product_name, product_price, product_rate, product_rate_number, product_description[:-1], str(product_images_urls)
+    return code, url, category_name[1:], product_name, product_price, product_rate, product_rate_number, product_description[:-1], str(product_images_urls)
 
 def storescrapeddatatoexcel(urls, download_path, code):
     workbook = Workbook()
