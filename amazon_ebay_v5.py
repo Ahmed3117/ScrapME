@@ -14,6 +14,28 @@ from bs4 import BeautifulSoup
 import re
 from openpyxl.utils import get_column_letter, column_index_from_string
 
+def read_urls_from_excel(file_path):
+    try:
+        # Load the Excel workbook
+        workbook = openpyxl.load_workbook(file_path)
+        # Select the first sheet (you may need to modify this if your data is in a different sheet)
+        sheet = workbook.active
+        # Create a dictionary from the first two columns
+        result_list = []
+        for row in sheet.iter_rows(min_row=1, max_col=2, values_only=True):
+            value_list = []
+            key, value = row
+            value_list.append(key)
+            if value == None:
+                value_list.append('')
+            else:
+                value_list.append(value)
+                result_list.append(value_list)
+
+        return result_list
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
 def amazon_urls(urls):
     cleaned_urls = []
@@ -31,6 +53,8 @@ def amazon_urls(urls):
                 cleaned_urls.append(url[index:index + space_index])
             else:
                 cleaned_urls.append(url[index:index + newline_index])
+        elif "ebay" in url or "offerup" in url :
+            pass
         else:
             cleaned_urls.append('')
     return cleaned_urls
@@ -51,6 +75,8 @@ def ebay_urls(urls):
                 cleaned_urls.append(url[index:index + space_index])
             else:
                 cleaned_urls.append(url[index:index + newline_index])
+        elif "amazon" in url or "a.c" in url or "offerup" in url :
+            pass
         else:
             cleaned_urls.append('')
     return cleaned_urls
@@ -71,9 +97,28 @@ def offerup_urls(urls):
                 cleaned_urls.append(url[index:index + space_index])
             else:
                 cleaned_urls.append(url[index:index + newline_index])
+        elif "amazon" in url or "a.c" in url or "ebay" in url :
+            pass
         else:
             cleaned_urls.append('')
     return cleaned_urls
+
+def clean_excel_url(url):
+    cleaned_url = ''
+    if "a.c" in url or "amazon.c" in url or "ebay" in url:
+        index = url.index("http")
+        space_index = url[index:].find(" ")
+        newline_index = url[index:].find("\n")
+        if space_index == -1 and newline_index == -1:
+            cleaned_url = url[index:]
+        elif space_index != -1 and newline_index != -1:
+            end_index = min(space_index, newline_index) + index
+            cleaned_url = url[index:end_index]
+        elif space_index != -1:
+            cleaned_url = url[index:index + space_index]
+        else:
+            cleaned_url = url[index:index + newline_index]
+    return cleaned_url
 
 def scrapurl(url, code,choosen_data):
     bad_urls =[]
@@ -88,12 +133,14 @@ def scrapurl(url, code,choosen_data):
     whole_price = ''
     fraction_price = ''
     product_images_urls = []
-    response = requests.get(url, headers={'User-Agent': '', 'Accept-Language': 'en-US, en;q=0.5'})
-    soup = BeautifulSoup(response.text, 'html.parser')
+    try:
+        response = requests.get(url, headers={'User-Agent': '', 'Accept-Language': 'en-US, en;q=0.5'})
+        soup = BeautifulSoup(response.text, 'html.parser')
+    except:
+        pass
     data = [code,url]
     if "www.ebay" in url:
         try:   
-
             try:
                 image_urls = soup.select('.ux-image-filmstrip-carousel-item img')
                 for image in image_urls[:6]:
@@ -238,7 +285,7 @@ def scrapurl(url, code,choosen_data):
     print(data)
     return data
 
-def storescrapeddatatoexcel(urls, download_path, code, choosen_data):
+def storescrapeddatatoexcel(urls, download_path, code, choosen_data , excel_urls):
     workbook = Workbook()
     sheet = workbook.active
     sheet['A1'] = 'LOT Num'
@@ -253,33 +300,70 @@ def storescrapeddatatoexcel(urls, download_path, code, choosen_data):
             sheet[current_column + '1'] = key
             current_column = get_column_letter(column_index_from_string(current_column) + 1)
 
-
     code = code
     sheet_name = '/scraped_data' + str(code) + '.xlsx'
 
-    for row, url in enumerate(urls, start=2):
-        if url != '':
-            data = scrapurl(url, code, choosen_data)
-            print(url)
-            sheet.cell(row=row, column=1).value = data[0] if len(data) > 0 else ''
-            sheet.cell(row=row, column=2).value = data[1] if len(data) > 1 else ''
-            sheet.cell(row=row, column=3).value = data[2] if len(data) > 2 else ''
-            index = 3
-            for key, value in column_headers.items():
-                sheet.cell(row=row, column=column_index_from_string(value)).value = data[index] if len(data) > index else ''
-                index += 1
-            
-        else:
-            sheet.cell(row=row, column=1).value = ''
-            sheet.cell(row=row, column=2).value = url
-            sheet.cell(row=row, column=3).value = '[]'
-            sheet.cell(row=row, column=4).value = ''
-            sheet.cell(row=row, column=5).value = ''
-            sheet.cell(row=row, column=6).value = ''
-            sheet.cell(row=row, column=7).value = ''
-            sheet.cell(row=row, column=8).value = ''
-            sheet.cell(row=row, column=9).value = ''
-        code += 1
+
+    if urls != [] :
+        print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm")
+        print(urls)
+        print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm")
+        for row, url in enumerate(urls, start=2):
+            if url != '':
+                data = scrapurl(url, code, choosen_data)
+                print(url)
+                sheet.cell(row=row, column=1).value = data[0] if len(data) > 0 else ''
+                sheet.cell(row=row, column=2).value = data[1] if len(data) > 1 else ''
+                sheet.cell(row=row, column=3).value = data[2] if len(data) > 2 else ''
+                index = 3
+                for key, value in column_headers.items():
+                    sheet.cell(row=row, column=column_index_from_string(value)).value = data[index] if len(data) > index else ''
+                    index += 1
+                
+            else:
+                sheet.cell(row=row, column=1).value = ''
+                sheet.cell(row=row, column=2).value = url
+                sheet.cell(row=row, column=3).value = '[]'
+                sheet.cell(row=row, column=4).value = ''
+                sheet.cell(row=row, column=5).value = ''
+                sheet.cell(row=row, column=6).value = ''
+                sheet.cell(row=row, column=7).value = ''
+                sheet.cell(row=row, column=8).value = ''
+                sheet.cell(row=row, column=9).value = ''
+            code += 1
+
+    if excel_urls :
+        print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm")
+        print(excel_urls)
+        print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm")
+        for row, row_data in enumerate(excel_urls, start=len(urls)+2):
+            print("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+            print(row_data)
+            print("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+            code = row_data[0]
+            url = row_data[1]
+            if url != '':
+                data = scrapurl(url, code, choosen_data)
+                print(url)
+                sheet.cell(row=row, column=1).value = data[0] if len(data) > 0 else ''
+                sheet.cell(row=row, column=2).value = data[1] if len(data) > 1 else ''
+                sheet.cell(row=row, column=3).value = data[2] if len(data) > 2 else ''
+                index = 3
+                for key, value in column_headers.items():
+                    sheet.cell(row=row, column=column_index_from_string(value)).value = data[index] if len(data) > index else ''
+                    index += 1
+                
+            else:
+                sheet.cell(row=row, column=1).value = ''
+                sheet.cell(row=row, column=2).value = url
+                sheet.cell(row=row, column=3).value = '[]'
+                sheet.cell(row=row, column=4).value = ''
+                sheet.cell(row=row, column=5).value = ''
+                sheet.cell(row=row, column=6).value = ''
+                sheet.cell(row=row, column=7).value = ''
+                sheet.cell(row=row, column=8).value = ''
+                sheet.cell(row=row, column=9).value = ''
+
     workbook.save(download_path + sheet_name)
 
 def downloadimages(file_path, start_code,choosen_data):
@@ -290,7 +374,11 @@ def downloadimages(file_path, start_code,choosen_data):
 
     for row in worksheet.iter_rows(values_only=True):
         cell_value = row[ord(column_to_extract) - ord('A')]
-        links_list = cell_value.split('\n')
+        links_list = []
+        try:
+            links_list = cell_value.split('\n')
+        except:
+            pass
         links_list = [link.strip() for link in links_list if link.strip()]
         column_data.append(links_list)
 
@@ -334,17 +422,26 @@ def browse_excel_file_path():
     else:
         excelfilepath = ''
 
-
-    
-
 def runner():
     code = 0
-    urls = urls_text.get("1.0", "end-1c").split('\n')
+    urls = []
+    try:
+        urls = urls_text.get("1.0", "end-1c").split('\n')
+    except:
+        pass
+    print("ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp")
+    print(urls)
+    print("ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp")
     amazon_links = amazon_urls(urls)
     ebay_links = ebay_urls(urls)
     offerup_links = offerup_urls(urls)
     all_urls = amazon_links + ebay_links + offerup_links
     urls = all_urls
+    if amazon_links == [''] and ebay_links == [''] and offerup_links == [''] :
+        urls = []
+    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    print(urls)
+    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
     choosen_site = radio_var.get()
     if choosen_site == '0':
         urls = amazon_links
@@ -366,13 +463,18 @@ def runner():
 
     path = output_label.cget("text").replace("Selected path: ", "")
     excelfilepath = output_file_label.cget("text").replace("Selected path: ", "")
+    print("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
     print(excelfilepath)
+    excel_urls = read_urls_from_excel(excelfilepath)
+    print(excel_urls)
+    print("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
     if path == '':
         path = os.path.join(os.path.expanduser('~'), 'Downloads')
     
     choosen_data = get_checkbox_values()
     try:
-        storescrapeddatatoexcel(urls, path, code,choosen_data)
+        
+        storescrapeddatatoexcel(urls, path, code,choosen_data,excel_urls)
         file_path = path + '/scraped_data' + str(code) + '.xlsx'
         if download_checkbox.get():
             downloadimages(file_path, code,choosen_data)
@@ -396,10 +498,8 @@ def print_checkbox_values():
     for label, value in checkbox_values.items():
         print(f"{label}: {value}")
 
-
 root = tk.Tk()
 root.title("Scraper")  # Title for the window
-
 
 class EntryWithPlaceholder(ttk.Entry):
     def __init__(self, master=None, placeholder="", **kwargs):
