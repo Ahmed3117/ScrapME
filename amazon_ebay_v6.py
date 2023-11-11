@@ -192,6 +192,10 @@ def scrapurl(url, code,choosen_data):
     try:
         response = requests.get(url, headers={'User-Agent': '', 'Accept-Language': 'en-US, en;q=0.5'})
         soup = BeautifulSoup(response.text, 'html.parser')
+        print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
+        url = response.url
+        print(url)
+        print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
     except:
         pass
     data = [code,url]
@@ -573,7 +577,6 @@ class EntryWithPlaceholder(ttk.Entry):
         self.delete(0, tk.END)
         self.insert(0, self.default_text)
         self['foreground'] = 'gray'
-
 
 
 # Set window icon
