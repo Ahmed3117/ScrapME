@@ -14,10 +14,24 @@ from bs4 import BeautifulSoup
 import re
 from openpyxl.utils import get_column_letter, column_index_from_string
 
+def clean_excel_url(url):
+    cleaned_url = ''
+    if "http" in url :
+        index = url.index("http")
+        space_index = url[index:].find(" ")
+        newline_index = url[index:].find("\n")
+        if space_index == -1 and newline_index == -1:
+            cleaned_url=url[index:]
+        elif space_index != -1 and newline_index != -1:
+            end_index = min(space_index, newline_index) + index
+            cleaned_url=url[index:end_index]
+        elif space_index != -1:
+            cleaned_url=url[index:index + space_index]
+        else:
+            cleaned_url=url[index:index + newline_index]
+    return cleaned_url
 
 def read_urls_from_excel(file_path,choosen_site):
-    print(choosen_site)
-    print("zzzzzzzzzzzzzzz")
     # try:
     workbook = openpyxl.load_workbook(file_path)
     sheet = workbook.active
@@ -27,38 +41,32 @@ def read_urls_from_excel(file_path,choosen_site):
         if value != None:
             if choosen_site == '0' :
                 if 'amazon' in value or 'a.c' in value:
-                    print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
-                    print('amazon')
-                    print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
                     value_list = []
                     value_list.append(key)
                     if value == None:
                         value_list.append('')
                     else:
+                        value = clean_excel_url(value)
                         value_list.append(value)
                         result_list.append(value_list)
             elif choosen_site == '1':
                 if 'ebay' in value:
-                    print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
-                    print('ebay')
-                    print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
                     value_list = []
                     value_list.append(key)
                     if value == None:
                         value_list.append('')
                     else:
+                        value = clean_excel_url(value)
                         value_list.append(value)
                         result_list.append(value_list)
             elif choosen_site == '2' :
                 if 'offerup' in value:
-                    print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
-                    print('offerup')
-                    print('zzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
                     value_list = []
                     value_list.append(key)
                     if value == None:
                         value_list.append('')
                     else:
+                        value = clean_excel_url(value)
                         value_list.append(value)
                         result_list.append(value_list)
             else:
@@ -67,6 +75,7 @@ def read_urls_from_excel(file_path,choosen_site):
                 if value == None:
                     value_list.append('')
                 else:
+                    value = clean_excel_url(value)
                     value_list.append(value)
                     result_list.append(value_list)
 
@@ -95,7 +104,10 @@ def amazon_urls(urls):
             pass
         else:
             cleaned_urls.append('')
-    return cleaned_urls
+    if cleaned_urls == ['']:
+        return []
+    else:
+        return cleaned_urls
 
 def ebay_urls(urls):
     cleaned_urls = []
@@ -117,7 +129,10 @@ def ebay_urls(urls):
             pass
         else:
             cleaned_urls.append('')
-    return cleaned_urls
+    if cleaned_urls == ['']:
+        return []
+    else:
+        return cleaned_urls
 
 def offerup_urls(urls):
     cleaned_urls = []
@@ -139,7 +154,10 @@ def offerup_urls(urls):
             pass
         else:
             cleaned_urls.append('')
-    return cleaned_urls
+    if cleaned_urls == ['']:
+        return []
+    else:
+        return cleaned_urls
 
 # def clean_excel_url(url):
 #     cleaned_url = ''
@@ -180,13 +198,15 @@ def scrapurl(url, code,choosen_data):
     if "www.ebay" in url:
         try:   
             try:
+                images_counter = 0
                 image_urls = soup.select('.ux-image-filmstrip-carousel-item img')
-                for image in image_urls[:6]:
+                for image in image_urls:
                     image_url = image['src']
-                    if image_url.endswith(".jpg"):
+                    if images_counter<=5 and image_url.endswith(".jpg"):
                         image_url = re.sub(r's-l64', r's-l1600', image_url)
                         print(image_url)
                         product_images_urls.append(image_url)
+                        images_counter +=1
                 product_images_urls = set(product_images_urls)
                 product_images_urls = list(product_images_urls)
             except:
@@ -235,15 +255,16 @@ def scrapurl(url, code,choosen_data):
             
         except:
             bad_urls.append(url)
-    if "https://a.co" in url or "amazon.c" in url:
+    if "a.co" in url or "amazon.c" in url:
         try:
+            images_counter = 0
             image_urls = soup.select('#altImages ul li span span span span img')
-            for image in image_urls[:6]:
+            for image in image_urls:
                 image_url = image['src']
-                if image_url.endswith(".jpg"):
+                if images_counter<=5 and image_url.endswith(".jpg"):
                     image_url = re.sub(r'\._(.*?)_\.', r'._AC_SL1500_.', image_url)
                     product_images_urls.append(image_url)
-
+                    images_counter +=1
             product_images_urls = set(product_images_urls)
             product_images_urls = list(product_images_urls)
         except:
@@ -320,7 +341,6 @@ def scrapurl(url, code,choosen_data):
             data.append(product_description[:-1]) 
         bad_urls.append(url)
     # return code, url, category_name, product_name, product_price, product_rate, product_rate_number, product_description[:-1], str(product_images_urls)
-    print(data)
     return data
 
 def storescrapeddatatoexcel(urls, download_path, code, choosen_data , excel_urls):
@@ -368,13 +388,13 @@ def storescrapeddatatoexcel(urls, download_path, code, choosen_data , excel_urls
             code += 1
 
     if excel_urls :
-        print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm")
+        print("excel file codes & urls : ")
         print(excel_urls)
-        print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm")
+        print("############################################################")
         for row, row_data in enumerate(excel_urls, start=len(urls)+2):
-            print("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+
             print(row_data)
-            print("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+            print("---------------------------------------------------------")
             code = row_data[0]
             url = row_data[1]
             if url != '':
@@ -464,19 +484,14 @@ def runner():
         urls = urls_text.get("1.0", "end-1c").split('\n')
     except:
         pass
-    print("ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp")
-    print(urls)
-    print("ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp")
     amazon_links = amazon_urls(urls)
     ebay_links = ebay_urls(urls)
     offerup_links = offerup_urls(urls)
     all_urls = amazon_links + ebay_links + offerup_links
     urls = all_urls
-    if amazon_links == [''] and ebay_links == [''] and offerup_links == [''] :
-        urls = []
-    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-    print(urls)
-    print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    # if amazon_links == [''] and ebay_links == [''] and offerup_links == [''] :
+    #     urls = []
+
     choosen_site = radio_var.get()
     if choosen_site == '0':
         urls = amazon_links
@@ -488,7 +503,8 @@ def runner():
         urls = offerup_links
         print("offerup has been choosen")
     print("--------------------------------------------------------------------------------------")
-    print(len(urls))
+    print("directly appended urls : ")
+    print("number of urls = " + str(len(urls)))
     print(urls)
     print("--------------------------------------------------------------------------------------")
     try:
@@ -498,17 +514,13 @@ def runner():
 
     path = output_label.cget("text").replace("Selected path: ", "")
     excelfilepath = output_file_label.cget("text").replace("Selected path: ", "")
-    print("dddddd")
-    print(excelfilepath)
     excel_urls = read_urls_from_excel(excelfilepath,choosen_site)
-    print(excel_urls)
-    print("sssssss")
+
     if path == '':
         path = os.path.join(os.path.expanduser('~'), 'Downloads')
     
     choosen_data = get_checkbox_values()
     try:
-        
         storescrapeddatatoexcel(urls, path, code,choosen_data,excel_urls)
         file_path = path + '/scraped_data' + str(code) + '.xlsx'
         if download_checkbox.get():
@@ -594,12 +606,13 @@ radio_frame.grid(row=1, column=0, rowspan=1, padx=5, pady=5)
 
 radio_var = tk.StringVar()
 radio_labels = ["Amazon", "Ebay", "OfferUp"]
-
+radio_buttons = []
 for i in range(3):
     radio_button = ttk.Radiobutton(radio_frame, text=radio_labels[i], variable=radio_var, value=i)
     radio_button.grid(row=0, column=i, padx=5)
+    radio_buttons.append(radio_button)
 
-
+radio_buttons[2].configure(state="disabled")
 # Create and configure the main frame
 main_frame = ttk.Frame(root, padding=20)
 main_frame.grid(column=0, row=2)
