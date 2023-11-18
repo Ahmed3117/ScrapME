@@ -330,7 +330,8 @@ def scrapurl(url, code,choosen_data):
                 else:
                     print(f"Attempt {retry + 1} failed. Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
-
+            if retry == 50 :
+                bad_urls.append(url) 
         amazon_soup = BeautifulSoup(amazon_response.text, 'html.parser')
 
         try:
@@ -421,6 +422,9 @@ def scrapurl(url, code,choosen_data):
     print(data)
     print("testttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt")
     # return code, url, category_name, product_name, product_price, product_rate, product_rate_number, product_description[:-1], str(product_images_urls)
+    print("baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaad")
+    print(bad_urls)
+    print("baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaad")
     return data
 
 def storescrapeddatatoexcel(urls, download_path, code, choosen_data , excel_urls):
@@ -509,41 +513,41 @@ def storescrapeddatatoexcel(urls, download_path, code, choosen_data , excel_urls
 def downloadimages(file_path, start_code,choosen_data):
     workbook = load_workbook(file_path)
     worksheet = workbook.active
-    column_to_extract = 'C'
-    column_data = []
-
+    column_a = 'A'
+    column_c = 'C'
+    
     for row in worksheet.iter_rows(values_only=True):
-        cell_value = row[ord(column_to_extract) - ord('A')]
+        code = row[ord(column_a) - ord('A')]
+        cell_value = row[ord(column_c) - ord('A')]
         links_list = []
+        
         try:
             links_list = cell_value.split('\n')
         except:
             pass
+        
         links_list = [link.strip() for link in links_list if link.strip()]
-        column_data.append(links_list)
-
-    corrected_links_list = []
-    for links_list in column_data[1:]:
+        
+        corrected_links_list = []
         for link in links_list:
             corrected_links = link.replace("[", "").replace("]", "").replace("'", "").split(',')
             corrected_links_list.append(corrected_links)
 
-    for link_group in corrected_links_list:
         counter = 0
-        # download_folder = os.path.dirname(file_path) + '/downloaded_images/' + str(start_code)
-        download_folder = os.path.dirname(file_path) + '/downloaded_images/' 
+        download_folder = os.path.dirname(file_path) + f'/downloaded_images'
         os.makedirs(download_folder, exist_ok=True)
-        for link in link_group:
-            try:
-                response = requests.get(link)
-                filename = os.path.join(download_folder, str(start_code) + " " + '(' + str(counter + 1) + ')' + ".jpg")
-                with open(filename, 'wb') as file:
-                    file.write(response.content)
-                print(f"Image downloaded and saved as {filename}")
-                counter += 1
-            except:
-                print("not valid" + link)
-        start_code += 1
+
+        for link_group in corrected_links_list:
+            for link in link_group:
+                try:
+                    response = requests.get(link)
+                    filename = os.path.join(download_folder, f'{code}_{counter + 1}.jpg')
+                    with open(filename, 'wb') as file:
+                        file.write(response.content)
+                    print(f"Image downloaded and saved as {filename}")
+                    counter += 1
+                except:
+                    print(f"Not valid: {link}")
 
 def browse_results_folder_path():
     default_path = os.path.join(os.path.expanduser('~'), 'Downloads')
