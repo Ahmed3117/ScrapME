@@ -641,7 +641,9 @@ root.title("Scraper")  # Title for the window
 def clear_screen():
     urls_text.delete('1.0', tk.END)  # Clear the URLs text widget
     code_entry.delete(0, tk.END)  # Clear the code entry field
-
+    
+    output_file_label.config(text="")
+    output_label.config(text="")
     # Uncheck all the checkboxes
     for checkbox in checkboxes:
         checkbox.set(False)
