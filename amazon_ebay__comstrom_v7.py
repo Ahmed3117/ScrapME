@@ -16,20 +16,26 @@ import re
 from openpyxl.utils import get_column_letter, column_index_from_string
 
 def clean_excel_url(url):
+    
     cleaned_url = ''
-    if "http" in url :
-        index = url.index("http")
-        space_index = url[index:].find(" ")
-        newline_index = url[index:].find("\n")
-        if space_index == -1 and newline_index == -1:
-            cleaned_url=url[index:]
-        elif space_index != -1 and newline_index != -1:
-            end_index = min(space_index, newline_index) + index
-            cleaned_url=url[index:end_index]
-        elif space_index != -1:
-            cleaned_url=url[index:index + space_index]
-        else:
-            cleaned_url=url[index:index + newline_index]
+    if url:
+        print(url)
+        print("urllllllllllllllllllllllllllllllll")
+        if "http" in url :
+            index = url.index("http")
+            space_index = url[index:].find(" ")
+            newline_index = url[index:].find("\n")
+            if space_index == -1 and newline_index == -1:
+                cleaned_url=url[index:]
+            elif space_index != -1 and newline_index != -1:
+                end_index = min(space_index, newline_index) + index
+                cleaned_url=url[index:end_index]
+            elif space_index != -1:
+                cleaned_url=url[index:index + space_index]
+            else:
+                cleaned_url=url[index:index + newline_index]
+    # else:
+    #     cleaned_url = ''
     return cleaned_url
 
 def read_urls_from_excel(file_path,choosen_site):
@@ -39,13 +45,14 @@ def read_urls_from_excel(file_path,choosen_site):
     result_list = []
     for row in sheet.iter_rows(min_row=1, max_col=2, values_only=True):
         key, value = row
-        if value != None:
+        if value :
             if choosen_site == '0' :
                 if 'amazon' in value or 'a.c' in value:
                     value_list = []
                     value_list.append(key)
                     if value == None:
                         value_list.append('')
+                        result_list.append(value_list)
                     else:
                         value = clean_excel_url(value)
                         value_list.append(value)
@@ -56,6 +63,7 @@ def read_urls_from_excel(file_path,choosen_site):
                     value_list.append(key)
                     if value == None:
                         value_list.append('')
+                        result_list.append(value_list)
                     else:
                         value = clean_excel_url(value)
                         value_list.append(value)
@@ -66,19 +74,30 @@ def read_urls_from_excel(file_path,choosen_site):
                     value_list.append(key)
                     if value == None:
                         value_list.append('')
+                        result_list.append(value_list)
                     else:
                         value = clean_excel_url(value)
                         value_list.append(value)
                         result_list.append(value_list)
             else:
-                value_list = []
-                value_list.append(key)
-                if value == None:
-                    value_list.append('')
-                else:
+                if key:
+                    value_list = []
+                    value_list.append(key)
+                    
                     value = clean_excel_url(value)
                     value_list.append(value)
                     result_list.append(value_list)
+        else:
+            if key:
+                value_list = []
+                value_list.append(key)
+                
+                value = clean_excel_url(value)
+                value_list.append(value)
+                result_list.append(value_list)
+    print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+    print(result_list)
+    print("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
     return result_list
     # except Exception as e:
     #     print(f"An error occurred: {e}")
@@ -463,7 +482,7 @@ def storescrapeddatatoexcel(urls, download_path, code, choosen_data , excel_urls
                     index += 1
                 
             else:
-                sheet.cell(row=row, column=1).value = ''
+                sheet.cell(row=row, column=1).value = code
                 sheet.cell(row=row, column=2).value = url
                 sheet.cell(row=row, column=3).value = '[]'
                 sheet.cell(row=row, column=4).value = ''
@@ -473,6 +492,7 @@ def storescrapeddatatoexcel(urls, download_path, code, choosen_data , excel_urls
                 sheet.cell(row=row, column=8).value = ''
                 sheet.cell(row=row, column=9).value = ''
             code += 1
+
 
     if excel_urls :
         print("excel file codes & urls : ")
@@ -485,10 +505,9 @@ def storescrapeddatatoexcel(urls, download_path, code, choosen_data , excel_urls
             print("---------------------------------------------------------")
             code = row_data[0]
             url = row_data[1]
+            data = scrapurl(url, code, choosen_data)
             if url != '':
                 print(url)
-                data = scrapurl(url, code, choosen_data)
-                
                 sheet.cell(row=row, column=1).value = data[0] if len(data) > 0 else ''
                 sheet.cell(row=row, column=2).value = data[1] if len(data) > 1 else ''
                 sheet.cell(row=row, column=3).value = data[2] if len(data) > 2 else ''
@@ -498,7 +517,7 @@ def storescrapeddatatoexcel(urls, download_path, code, choosen_data , excel_urls
                     index += 1
                 
             else:
-                sheet.cell(row=row, column=1).value = ''
+                sheet.cell(row=row, column=1).value = data[0]
                 sheet.cell(row=row, column=2).value = url
                 sheet.cell(row=row, column=3).value = '[]'
                 sheet.cell(row=row, column=4).value = ''
@@ -541,7 +560,7 @@ def downloadimages(file_path, start_code,choosen_data):
             for link in link_group:
                 try:
                     response = requests.get(link)
-                    filename = os.path.join(download_folder, f'{code}_{counter + 1}.jpg')
+                    filename = os.path.join(download_folder, f'{code}({counter + 1}).jpg')
                     with open(filename, 'wb') as file:
                         file.write(response.content)
                     print(f"Image downloaded and saved as {filename}")
@@ -614,6 +633,7 @@ def runner():
     
     choosen_data = get_checkbox_values()
     try:
+        print()
         storescrapeddatatoexcel(urls, path, code,choosen_data,excel_urls)
         file_path = path + '/scraped_data' + str(code) + '.xlsx'
         if download_checkbox.get():
