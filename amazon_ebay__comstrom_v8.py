@@ -392,17 +392,11 @@ def scrapurl(url, code,choosen_data):
             data.append(product_name) 
         if choosen_data['Price']:
             try:
-                whole_price = soup.select('.twisterSlotDiv')
-                whole_price = whole_price[-1]
-                whole_price = re.search(r'\d+\.\d+', str(whole_price))
-                whole_price = float(whole_price.group())
-                product_price = math.ceil(whole_price)
+                product_price = soup.select('td.a-span12 span span')[0].get_text()
+                product_price = float(product_price.replace('$', ''))
+                product_price = math.ceil(product_price)
             except:
                 try:
-                    product_price = soup.select('td.a-span12 span span')[0].get_text()
-                    product_price = float(product_price.replace('$', ''))
-                    product_price = math.ceil(product_price)
-                except:
                     try:
                         whole_price = amazon_soup.select('.a-price-whole')[0].get_text()
                     except:
@@ -422,8 +416,28 @@ def scrapurl(url, code,choosen_data):
                         if product_price != '.' :
                             product_price = float(product_price)  # Convert to float
                             product_price = math.ceil(product_price)  # Convert to float
+                except:
+                    for retry in range(max_retries):
+                        response = requests.get(url, headers={'User-Agent': '', 'Accept-Language': 'en-US, en;q=0.5'})
+                        soup = BeautifulSoup(response.text, 'html.parser')
+                        try:
+                            whole_price = soup.select('.twisterSwatchPrice')[0]
+                            match = re.search(r'\$\d+,\d+\.\d+', str(whole_price))
+                            if match:
+                                price_str = match.group()[1:]  # remove the dollar sign
+                                price_str = price_str.replace(',', '')  # remove the comma
+                                price = float(price_str)
+                                product_price = math.ceil(price)
+                                print(product_price)
+                        except:
+                            product_price = None
+                        if product_price != None:
+                            # Successful amazon_response
+                            break
+                        else:
+                            print(f" Getting Price Attempt {retry + 1} failed. Retrying in {retry_delay} seconds...")
+                            time.sleep(retry_delay)
             data.append(product_price) 
-        
         if choosen_data['Rate']:
             try:
                 product_rate = amazon_soup.select('#acrPopover span a span')[0].get_text().strip()
